@@ -9,15 +9,21 @@ class ImageViewerWindow(w.QMainWindow):
         self.loadedImagePaths = []
         self.imageIndex = 0
         self.setWindowTitle("EXIF Image Viewer")
-        self.layout = w.QStackedLayout()
-        widget = w.QWidget()
-        widget.setLayout(self.layout)
-        self.setCentralWidget(widget)
         # Actions
-        openAction = w.QAction("Open...", self)
-        openAction.setStatusTip("Open an image file.")
-        openAction.setShortcut(g.QKeySequence.Open)
-        openAction.triggered.connect(self.openMenuDialog)
+        self.openAction = w.QAction("Open...", self)
+        self.openAction.setStatusTip("Open an image file.")
+        self.openAction.setShortcut(g.QKeySequence.Open)
+        self.openAction.triggered.connect(self.openMenuDialog)
+
+        self.nextAction = w.QAction("Next image", self)
+        self.nextAction.setStatusTip("Show the next image.")
+        self.nextAction.setShortcut(g.QKeySequence.MoveToNextChar)
+        self.nextAction.triggered.connect(lambda: self.changeImage(next = True))
+
+        self.previousAction = w.QAction("Previous image", self)
+        self.previousAction.setStatusTip("Show the previous image.")
+        self.previousAction.setShortcut(g.QKeySequence.MoveToPreviousChar)
+        self.previousAction.triggered.connect(lambda: self.changeImage(next = False))
         # Toolbar elements
         toolbar = w.QToolBar("Top toolbar")
         toolbar.setMovable(False)
@@ -29,23 +35,39 @@ class ImageViewerWindow(w.QMainWindow):
         menu = self.menuBar()
         fileMenu = menu.addMenu("&File")
         editMenu = menu.addMenu("&Edit")
-        editMenu.addAction("test")
+        editMenu.addAction("Rotate Left")
+        editMenu.addAction("Rotate Right")
         # Add actions to toolbar and menu
         for element in (toolbar, fileMenu):
-            element.addAction(openAction)
-        
+            element.addAction(self.openAction)
+            element.addAction(self.previousAction)
+            element.addAction(self.nextAction)
+    
+    def changeImage(self, next):
+        if next:
+            self.showImageAtIndex((self.imageIndex + 1) % len(self.loadedImagePaths))
+        else:
+            self.showImageAtIndex((self.imageIndex - 1) % len(self.loadedImagePaths))
+
+    def showImageAtIndex(self, index):
+        image = g.QPixmap(self.loadedImagePaths[index]) # Get the first(or only) image chosen
+        label = w.QLabel()
+        label.setPixmap(image)
+        self.setCentralWidget(label)
+        self.imageIndex = index
 
     def openMenuDialog(self, firstStart = False):
         self.loadedImagePaths, _ = w.QFileDialog.getOpenFileNames(parent=self, caption="Select one or more JPEG files to open:", filter="JPEG Image(*.jpg *.jpeg)", options=w.QFileDialog.DontUseNativeDialog)
+        if len(self.loadedImagePaths) == 1:
+            self.nextAction.setEnabled(False)
+            self.previousAction.setEnabled(False)
+        else:
+            self.nextAction.setEnabled(True)
+            self.previousAction.setEnabled(True)
         if self.loadedImagePaths:
             if firstStart:
                 self.show()
-            for imagePath in self.loadedImagePaths:
-                image = g.QPixmap(imagePath)
-                label = w.QLabel()
-                label.setPixmap(image)
-                self.layout.addWidget(label)
-            
+            self.showImageAtIndex(self.imageIndex)
         elif firstStart:
             sys.exit()
 
