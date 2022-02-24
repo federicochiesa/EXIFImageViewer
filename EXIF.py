@@ -10,6 +10,7 @@ class ImageViewerWindow(w.QMainWindow):
         self.imageIndex = 0
         self.setWindowTitle("EXIF Image Viewer")
         self.scrollArea = w.QScrollArea()
+        self.label = w.QLabel()
         self.setCentralWidget(self.scrollArea)
         # Actions
         self.openAction = w.QAction("Open...", self)
@@ -31,6 +32,17 @@ class ImageViewerWindow(w.QMainWindow):
         self.EXIFAction.setStatusTip("Show EXIF data for this image.")
         self.EXIFAction.setShortcut(g.QKeySequence.Italic)
         self.EXIFAction.triggered.connect(self.showEXIFWindow)
+
+        self.RCWAction = w.QAction("Rotate Clockwise", self)
+        self.RCWAction.setStatusTip("Rotate the image 90 degress clockwise.")
+        self.RCWAction.setShortcut(g.QKeySequence.MoveToNextWord)
+        self.RCWAction.triggered.connect(lambda: self.rotateImage(clockwise=True))
+
+        self.RCCWAction = w.QAction("Rotate Counter-clockwise", self)
+        self.RCCWAction.setStatusTip("Rotate the image 90 degress counter-clockwise.")
+        self.RCCWAction.setShortcut(g.QKeySequence.MoveToPreviousWord)
+        self.RCCWAction.triggered.connect(lambda: self.rotateImage(clockwise=False))
+
         # Toolbar elements
         toolbar = w.QToolBar("Top toolbar")
         toolbar.setMovable(False)
@@ -42,8 +54,10 @@ class ImageViewerWindow(w.QMainWindow):
         menu = self.menuBar()
         fileMenu = menu.addMenu("&File")
         editMenu = menu.addMenu("&Edit")
-        editMenu.addAction("Rotate Left")
-        editMenu.addAction("Rotate Right")
+        editMenu.addAction(self.RCWAction)
+        editMenu.addAction(self.RCCWAction)
+        toolbar.addAction(self.RCWAction)
+        toolbar.addAction(self.RCCWAction)
         # Add actions to toolbar and menu
         for element in (toolbar, fileMenu):
             element.addAction(self.openAction)
@@ -56,13 +70,26 @@ class ImageViewerWindow(w.QMainWindow):
             self.showImageAtIndex((self.imageIndex + 1) % len(self.loadedImagePaths))
         else:
             self.showImageAtIndex((self.imageIndex - 1) % len(self.loadedImagePaths))
+        self.angle = 0
+        print("changeImage")
+
+    def rotateImage(self, clockwise): # FIXME: rotation angle is not relative! Take into account actual rotation angle
+        if clockwise:
+            self.angle = (self.angle + 90) % 360
+        else:
+            self.angle = (self.angle - 90) % 360
+        print(self.angle)
+        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle),c.Qt.SmoothTransformation))
+        self.scrollArea.setWidget(self.label)
+
 
     def showImageAtIndex(self, index):
-        image = g.QPixmap(self.loadedImagePaths[index]) # Get the first(or only) image chosen
-        label = w.QLabel()
-        label.setPixmap(image)
-        self.scrollArea.setWidget(label)
+        image = g.QPixmap(self.loadedImagePaths[index])
+        self.label.setPixmap(image)
+        self.scrollArea.setWidget(self.label)
         self.imageIndex = index
+        self.angle = 0
+        # TODO: Scale label to fit window size
 
     def openMenuDialog(self, firstStart = False):
         self.loadedImagePaths, _ = w.QFileDialog.getOpenFileNames(parent=self, caption="Select one or more JPEG files to open:", filter="JPEG Image(*.jpg *.jpeg)", options=w.QFileDialog.DontUseNativeDialog)
