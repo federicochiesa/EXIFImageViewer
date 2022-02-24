@@ -9,6 +9,8 @@ class ImageViewerWindow(w.QMainWindow):
         self.loadedImagePaths = []
         self.imageIndex = 0
         self.setWindowTitle("EXIF Image Viewer")
+        self.scrollArea = w.QScrollArea()
+        self.setCentralWidget(self.scrollArea)
         # Actions
         self.openAction = w.QAction("Open...", self)
         self.openAction.setStatusTip("Open an image file.")
@@ -24,6 +26,11 @@ class ImageViewerWindow(w.QMainWindow):
         self.previousAction.setStatusTip("Show the previous image.")
         self.previousAction.setShortcut(g.QKeySequence.MoveToPreviousChar)
         self.previousAction.triggered.connect(lambda: self.changeImage(next = False))
+
+        self.EXIFAction = w.QAction("Show EXIF data", self)
+        self.EXIFAction.setStatusTip("Show EXIF data for this image.")
+        self.EXIFAction.setShortcut(g.QKeySequence.Italic)
+        self.EXIFAction.triggered.connect(self.showEXIFWindow)
         # Toolbar elements
         toolbar = w.QToolBar("Top toolbar")
         toolbar.setMovable(False)
@@ -42,6 +49,7 @@ class ImageViewerWindow(w.QMainWindow):
             element.addAction(self.openAction)
             element.addAction(self.previousAction)
             element.addAction(self.nextAction)
+            element.addAction(self.EXIFAction)
     
     def changeImage(self, next):
         if next:
@@ -53,7 +61,7 @@ class ImageViewerWindow(w.QMainWindow):
         image = g.QPixmap(self.loadedImagePaths[index]) # Get the first(or only) image chosen
         label = w.QLabel()
         label.setPixmap(image)
-        self.setCentralWidget(label)
+        self.scrollArea.setWidget(label)
         self.imageIndex = index
 
     def openMenuDialog(self, firstStart = False):
@@ -70,6 +78,9 @@ class ImageViewerWindow(w.QMainWindow):
             self.showImageAtIndex(self.imageIndex)
         elif firstStart:
             sys.exit()
+    
+    def showEXIFWindow(self):
+        print("EXIF Window shown")
 
 a = w.QApplication([])
 a.setApplicationName("EXIF Image Viewer")
