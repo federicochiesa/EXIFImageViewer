@@ -73,13 +73,13 @@ class ImageViewerWindow(w.QMainWindow):
             self.showImageAtIndex((self.imageIndex - 1) % len(self.loadedImagePaths))
         self.angle = 0
 
-    def rotateImage(self, clockwise): # FIXME: cuts off image when rotating
+    def rotateImage(self, clockwise):
         if clockwise:
             self.angle = (self.angle + 90) % 360
         else:
             self.angle = (self.angle - 90) % 360
-        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle),c.Qt.SmoothTransformation))
-        self.scrollArea.setWidget(self.label)
+        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation))
+        self.label.adjustSize()
 
     def showImageAtIndex(self, index):
         image = g.QPixmap(self.loadedImagePaths[index])
