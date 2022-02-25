@@ -71,7 +71,7 @@ class ImageViewerWindow(w.QMainWindow):
             self.showImageAtIndex((self.imageIndex + 1) % len(self.loadedImagePaths))
         else:
             self.showImageAtIndex((self.imageIndex - 1) % len(self.loadedImagePaths))
-        self.angle = 0
+        
 
     def rotateImage(self, clockwise):
         if clockwise:
@@ -87,8 +87,8 @@ class ImageViewerWindow(w.QMainWindow):
         self.scrollArea.setWidget(self.label)
         self.imageIndex = index
         self.angle = 0
-        self.showMaximized()
-        # TODO: Scale window to fit label size
+        self.label.adjustSize()
+        self.showMaximized() # TODO: Scale window to fit label size
 
     def openMenuDialog(self, firstStart = False):
         self.loadedImagePaths, _ = w.QFileDialog.getOpenFileNames(parent=self, caption="Select one or more JPEG files to open:", filter="JPEG Image(*.jpg *.jpeg)")
@@ -120,6 +120,7 @@ class EXIFModel(c.QAbstractListModel):
             self.exifData.append((key, value))
         #lat, long = self.getEXIFLocation(self.getEXIFData())
         #print(lat,long)
+        #TODO: display EXIF data in window
 
     def data(self, index, role):
         if role == c.Qt.DisplayRole:
