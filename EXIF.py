@@ -1,6 +1,7 @@
 import PyQt5.QtWidgets as w
 import PyQt5.QtGui as g
 import PyQt5.QtCore as c
+import exifread
 import sys
 
 class ImageViewerWindow(w.QMainWindow):
@@ -36,12 +37,12 @@ class ImageViewerWindow(w.QMainWindow):
         self.RCWAction = w.QAction("Rotate Clockwise", self)
         self.RCWAction.setStatusTip("Rotate the image 90 degress clockwise.")
         self.RCWAction.setShortcut(g.QKeySequence.MoveToNextWord)
-        self.RCWAction.triggered.connect(lambda: self.rotateImage(clockwise=True))
+        self.RCWAction.triggered.connect(lambda: self.rotateImage(clockwise = True))
 
         self.RCCWAction = w.QAction("Rotate Counter-clockwise", self)
         self.RCCWAction.setStatusTip("Rotate the image 90 degress counter-clockwise.")
         self.RCCWAction.setShortcut(g.QKeySequence.MoveToPreviousWord)
-        self.RCCWAction.triggered.connect(lambda: self.rotateImage(clockwise=False))
+        self.RCCWAction.triggered.connect(lambda: self.rotateImage(clockwise = False))
 
         # Toolbar elements
         toolbar = w.QToolBar("Top toolbar")
@@ -73,7 +74,7 @@ class ImageViewerWindow(w.QMainWindow):
         self.angle = 0
         print("changeImage")
 
-    def rotateImage(self, clockwise): # FIXME: rotation angle is not relative! Take into account actual rotation angle
+    def rotateImage(self, clockwise): # FIXME: cuts off image when rotating
         if clockwise:
             self.angle = (self.angle + 90) % 360
         else:
@@ -89,17 +90,18 @@ class ImageViewerWindow(w.QMainWindow):
         self.scrollArea.setWidget(self.label)
         self.imageIndex = index
         self.angle = 0
-        # TODO: Scale label to fit window size
+        self.showMaximized()
+        # TODO: Scale window to fit label size
 
     def openMenuDialog(self, firstStart = False):
-        self.loadedImagePaths, _ = w.QFileDialog.getOpenFileNames(parent=self, caption="Select one or more JPEG files to open:", filter="JPEG Image(*.jpg *.jpeg)", options=w.QFileDialog.DontUseNativeDialog)
-        if len(self.loadedImagePaths) == 1:
-            self.nextAction.setEnabled(False)
-            self.previousAction.setEnabled(False)
-        else:
-            self.nextAction.setEnabled(True)
-            self.previousAction.setEnabled(True)
+        self.loadedImagePaths, _ = w.QFileDialog.getOpenFileNames(parent=self, caption="Select one or more JPEG files to open:", filter="JPEG Image(*.jpg *.jpeg)")
         if self.loadedImagePaths:
+            if len(self.loadedImagePaths) == 1:
+                self.nextAction.setEnabled(False)
+                self.previousAction.setEnabled(False)
+            else:
+                self.nextAction.setEnabled(True)
+                self.previousAction.setEnabled(True)
             if firstStart:
                 self.show()
             self.showImageAtIndex(self.imageIndex)
@@ -107,7 +109,55 @@ class ImageViewerWindow(w.QMainWindow):
             sys.exit()
     
     def showEXIFWindow(self):
-        print("EXIF Window shown")
+        self.exif = EXIFWindow(self.loadedImagePaths[self.imageIndex])
+        self.exif.show()
+        self.EXIFAction.setEnabled(False) #TODO: reenable when EXIF window is closed
+
+class EXIFWindow(g.QWindow):
+    def __init__(self, imagePath):
+        super().__init__()
+        self.image = imagePath
+        lat, long = self.getEXIFLocation(self.getEXIFData())
+        print(lat,long)
+        print(self.getEXIFData())
+        #TODO: finish init
+    
+    def getEXIFData(self):
+        with open(self.image, 'rb') as f:
+            EXIFTags = exifread.process_file(f)
+        return EXIFTags
+        
+    def getIfExist(self, data, key):
+        if key in data:
+            return data[key]
+        return None
+
+    def convertToDegrees(self, value):
+        d = float(value.values[0].num) / float(value.values[0].den)
+        m = float(value.values[1].num) / float(value.values[1].den)
+        s = float(value.values[2].num) / float(value.values[2].den)
+
+        return d + (m / 60.0) + (s / 3600.0)
+        
+    def getEXIFLocation(self, EXIFData):
+        latitude = None
+        longitude = None
+
+        GPSLatitude = self.getIfExist(EXIFData, 'GPS GPSLatitude')
+        GPSLatitudeRef = self.getIfExist(EXIFData, 'GPS GPSLatitudeRef')
+        GPSLongitude = self.getIfExist(EXIFData, 'GPS GPSLongitude')
+        GPSLongitudeRef = self.getIfExist(EXIFData, 'GPS GPSLongitudeRef')
+
+        if GPSLatitude and GPSLatitudeRef and GPSLongitude and GPSLongitudeRef:
+            latitude = self.convertToDegrees(GPSLatitude)
+            if GPSLatitudeRef.values[0] != 'N':
+                latitude = 0 - latitude
+
+            longitude = self.convertToDegrees(GPSLongitude)
+            if GPSLongitudeRef.values[0] != 'E':
+                longitude = 0 - longitude
+
+        return latitude, longitude
 
 a = w.QApplication([])
 a.setApplicationName("EXIF Image Viewer")
