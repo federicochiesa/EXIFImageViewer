@@ -72,17 +72,14 @@ class ImageViewerWindow(w.QMainWindow):
         else:
             self.showImageAtIndex((self.imageIndex - 1) % len(self.loadedImagePaths))
         self.angle = 0
-        print("changeImage")
 
     def rotateImage(self, clockwise): # FIXME: cuts off image when rotating
         if clockwise:
             self.angle = (self.angle + 90) % 360
         else:
             self.angle = (self.angle - 90) % 360
-        print(self.angle)
         self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle),c.Qt.SmoothTransformation))
         self.scrollArea.setWidget(self.label)
-
 
     def showImageAtIndex(self, index):
         image = g.QPixmap(self.loadedImagePaths[index])
@@ -110,20 +107,30 @@ class ImageViewerWindow(w.QMainWindow):
     
     def showEXIFWindow(self):
         self.exif = EXIFWindow(self.loadedImagePaths[self.imageIndex])
+        self.exif.windowClosed.connect(lambda: self.EXIFAction.setEnabled(True))
         self.exif.show()
-        self.EXIFAction.setEnabled(False) #TODO: reenable when EXIF window is closed
+        self.EXIFAction.setEnabled(False)
 
-class EXIFWindow(g.QWindow):
-    def __init__(self, imagePath):
-        super().__init__()
-        self.image = imagePath
-        lat, long = self.getEXIFLocation(self.getEXIFData())
-        print(lat,long)
-        print(self.getEXIFData())
-        #TODO: finish init
-    
-    def getEXIFData(self):
-        with open(self.image, 'rb') as f:
+class EXIFModel(c.QAbstractListModel):
+    def __init__(self, path):
+        super(EXIFModel, self).__init__()
+        exif = self.getEXIFData(path)
+        self.exifData = []
+        for key, value in exif.items():
+            self.exifData.append((key, value))
+        #lat, long = self.getEXIFLocation(self.getEXIFData())
+        #print(lat,long)
+
+    def data(self, index, role):
+        if role == c.Qt.DisplayRole:
+            key, value = self.todos[index.row()]
+            return key, value
+
+    def rowCount(self):
+        return len(self.exifData)
+
+    def getEXIFData(self, path):
+        with open(path, 'rb') as f:
             EXIFTags = exifread.process_file(f)
         return EXIFTags
         
@@ -159,6 +166,18 @@ class EXIFWindow(g.QWindow):
 
         return latitude, longitude
 
+class EXIFWindow(w.QMainWindow):
+    windowClosed = c.pyqtSignal()
+    def __init__(self, imagePath):
+        super().__init__()
+        self.model = EXIFModel(imagePath)
+        print(self.model.rowCount())
+        #TODO: finish init
+    
+    def closeEvent(self, event):
+        self.windowClosed.emit()
+        event.accept()
+    
 a = w.QApplication([])
 a.setApplicationName("EXIF Image Viewer")
 ivw = ImageViewerWindow()
