@@ -1,3 +1,5 @@
+from ctypes import Union
+from re import S
 import PyQt5.QtWidgets as w
 import PyQt5.QtGui as g
 import PyQt5.QtCore as c
@@ -13,6 +15,8 @@ class ImageViewerWindow(w.QMainWindow):
         self.scrollArea = w.QScrollArea()
         self.label = w.QLabel()
         self.setCentralWidget(self.scrollArea)
+        self.scrollArea.setWidgetResizable(True)
+        self.label.setAlignment(c.Qt.AlignCenter)
         # Actions
         self.openAction = w.QAction("Open...", self)
         self.openAction.setStatusTip("Open an image file.")
@@ -88,7 +92,6 @@ class ImageViewerWindow(w.QMainWindow):
         self.imageIndex = index
         self.angle = 0
         self.label.adjustSize()
-        self.showMaximized() # TODO: Scale window to fit label size
 
     def openMenuDialog(self, firstStart = False):
         self.loadedImagePaths, _ = w.QFileDialog.getOpenFileNames(parent=self, caption="Select one or more JPEG files to open:", filter="JPEG Image(*.jpg *.jpeg)")
@@ -101,6 +104,7 @@ class ImageViewerWindow(w.QMainWindow):
                 self.previousAction.setEnabled(True)
             if firstStart:
                 self.show()
+            self.imageIndex = 0
             self.showImageAtIndex(self.imageIndex)
         elif firstStart:
             sys.exit()
@@ -111,24 +115,30 @@ class ImageViewerWindow(w.QMainWindow):
         self.exif.show()
         self.EXIFAction.setEnabled(False)
 
-class EXIFModel(c.QAbstractListModel):
+class EXIFModel(c.QAbstractTableModel):
     def __init__(self, path):
         super(EXIFModel, self).__init__()
         exif = self.getEXIFData(path)
         self.exifData = []
         for key, value in exif.items():
             self.exifData.append((key, value))
-        #lat, long = self.getEXIFLocation(self.getEXIFData())
-        #print(lat,long)
-        #TODO: display EXIF data in window
 
     def data(self, index, role):
         if role == c.Qt.DisplayRole:
-            key, value = self.todos[index.row()]
-            return key, value
+            key, value = self.exifData[index.row()]
+            print(key, value)
+            if index.column() == 0:
+                return key
+            elif index.column() == 1:
+                return str(value)
+            else:
+                return None
 
-    def rowCount(self):
+    def rowCount(self, parent = None):
         return len(self.exifData)
+
+    def columnCount(self, parent = None):
+        return 2
 
     def getEXIFData(self, path):
         with open(path, 'rb') as f:
@@ -169,11 +179,17 @@ class EXIFModel(c.QAbstractListModel):
 
 class EXIFWindow(w.QMainWindow):
     windowClosed = c.pyqtSignal()
+
     def __init__(self, imagePath):
         super().__init__()
+        self.setWindowTitle("EXIF Data")
         self.model = EXIFModel(imagePath)
-        print(self.model.rowCount())
-        #TODO: finish init
+        self.tableView = w.QTableView()
+        self.tableView.setModel(self.model)
+        self.setCentralWidget(self.tableView)
+        self.tableView.resizeColumnToContents(0)
+        self.tableView.resizeColumnToContents(1)
+        self.tableView.setFixedWidth(self.tableView.columnWidth(0) + self.tableView.columnWidth(1))
     
     def closeEvent(self, event):
         self.windowClosed.emit()
