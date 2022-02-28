@@ -1,10 +1,10 @@
-from ctypes import Union
-from re import S
 import PyQt5.QtWidgets as w
 import PyQt5.QtGui as g
 import PyQt5.QtCore as c
 import exifread
 import sys
+
+#TODO: add zoom and gmaps imtegration
 
 class ImageViewerWindow(w.QMainWindow):
     def __init__(self):
@@ -48,6 +48,16 @@ class ImageViewerWindow(w.QMainWindow):
         self.RCCWAction.setShortcut(g.QKeySequence.MoveToPreviousWord)
         self.RCCWAction.triggered.connect(lambda: self.rotateImage(clockwise = False))
 
+        self.zoomInAction = w.QAction("Zoom In", self)
+        self.zoomInAction.setStatusTip("Scale the image by a factor of 1,25.")
+        self.zoomInAction.setShortcut(g.QKeySequence.ZoomIn)
+        self.zoomInAction.triggered.connect(lambda: self.scaleImage(zoomIn = True))
+
+        self.zoomOutAction = w.QAction("Zoom Out", self)
+        self.zoomOutAction.setStatusTip("Scale the image by a factor of 0,75.")
+        self.zoomOutAction.setShortcut(g.QKeySequence.ZoomOut)
+        self.zoomOutAction.triggered.connect(lambda: self.scaleImage(zoomIn = False))
+
         # Toolbar elements
         toolbar = w.QToolBar("Top toolbar")
         toolbar.setMovable(False)
@@ -61,8 +71,12 @@ class ImageViewerWindow(w.QMainWindow):
         editMenu = menu.addMenu("&Edit")
         editMenu.addAction(self.RCWAction)
         editMenu.addAction(self.RCCWAction)
+        editMenu.addAction(self.zoomInAction)
+        editMenu.addAction(self.zoomOutAction)
         toolbar.addAction(self.RCWAction)
         toolbar.addAction(self.RCCWAction)
+        toolbar.addAction(self.zoomInAction)
+        toolbar.addAction(self.zoomOutAction)
         # Add actions to toolbar and menu
         for element in (toolbar, fileMenu):
             element.addAction(self.openAction)
@@ -76,7 +90,6 @@ class ImageViewerWindow(w.QMainWindow):
         else:
             self.showImageAtIndex((self.imageIndex - 1) % len(self.loadedImagePaths))
         
-
     def rotateImage(self, clockwise):
         if clockwise:
             self.angle = (self.angle + 90) % 360
@@ -84,6 +97,12 @@ class ImageViewerWindow(w.QMainWindow):
             self.angle = (self.angle - 90) % 360
         self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation))
         self.label.adjustSize()
+    
+    def scaleImage(self, zoomIn): #TODO: finish implementation
+        if zoomIn:
+            print("zoom in")
+        else:
+            print("zoom out")
 
     def showImageAtIndex(self, index):
         image = g.QPixmap(self.loadedImagePaths[index])
@@ -92,6 +111,7 @@ class ImageViewerWindow(w.QMainWindow):
         self.imageIndex = index
         self.angle = 0
         self.label.adjustSize()
+        self.resize(self.label.sizeHint())
 
     def openMenuDialog(self, firstStart = False):
         self.loadedImagePaths, _ = w.QFileDialog.getOpenFileNames(parent=self, caption="Select one or more JPEG files to open:", filter="JPEG Image(*.jpg *.jpeg)")
