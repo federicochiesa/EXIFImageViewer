@@ -4,7 +4,7 @@ import PyQt5.QtCore as c
 import exifread
 import sys
 
-#TODO: add zoom and gmaps imtegration
+#TODO: add gmaps imtegration
 
 class ImageViewerWindow(w.QMainWindow):
     def __init__(self):
@@ -100,9 +100,10 @@ class ImageViewerWindow(w.QMainWindow):
     
     def scaleImage(self, zoomIn): #TODO: finish implementation
         if zoomIn:
-            print("zoom in")
+            self.imageWidth *= 1.25
         else:
-            print("zoom out")
+            self.imageWidth /= 1.25
+        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).scaledToWidth(self.imageWidth))
 
     def showImageAtIndex(self, index):
         image = g.QPixmap(self.loadedImagePaths[index])
@@ -112,6 +113,7 @@ class ImageViewerWindow(w.QMainWindow):
         self.angle = 0
         self.label.adjustSize()
         self.resize(self.label.sizeHint())
+        self.imageWidth = image.rect().width()
 
     def openMenuDialog(self, firstStart = False):
         self.loadedImagePaths, _ = w.QFileDialog.getOpenFileNames(parent=self, caption="Select one or more JPEG files to open:", filter="JPEG Image(*.jpg *.jpeg)")
