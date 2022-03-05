@@ -5,8 +5,6 @@ import PyQt5.QtWebEngineWidgets as web
 import exifread
 import sys
 
-#TODO: add max scaling of 512px
-
 class ImageViewerWindow(w.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -117,7 +115,7 @@ class ImageViewerWindow(w.QMainWindow):
         self.imageIndex = index
         self.angle = 0
         self.label.adjustSize()
-        self.resize(self.label.sizeHint())
+        self.resize(self.label.sizeHint()) # TODO: resize window correctly on image open
         self.imageWidth = image.rect().width()
         self.model = EXIFModel(self.loadedImagePaths[index])
         if self.model.getEXIFLocation() != (None, None):
@@ -148,7 +146,9 @@ class ImageViewerWindow(w.QMainWindow):
         self.EXIFAction.setEnabled(False)
 
     def showLocation(self): # TODO: URL generation based on location
-        self.location = LocationWindow("example.com")
+        coordinates = list(self.model.getEXIFLocation())
+        url = "https://www.openstreetmap.org/export/embed.html?bbox=" + str(coordinates[1] - 0.5) + "," + str(coordinates[0] - 0.5) + "," + str(coordinates[1] + 0.5) + "," + str(coordinates[0] + 0.5) + "&layer=mapnik&marker=" + str(coordinates[0]) + "," + str(coordinates[1])
+        self.location = LocationWindow(url)
         self.location.windowClosed.connect(lambda: self.locationAction.setEnabled(True))
         self.location.show()
         self.locationAction.setEnabled(False)
@@ -245,7 +245,7 @@ class EXIFWindow(w.QMainWindow):
 class LocationWindow(w.QMainWindow):
     def __init__(self, URL):
         super(LocationWindow, self).__init__()
-        self.browser = w.QWebEngineView()
+        self.browser = web.QWebEngineView()
         self.browser.setUrl(c.QUrl(URL))
         self.setCentralWidget(self.browser)
     
