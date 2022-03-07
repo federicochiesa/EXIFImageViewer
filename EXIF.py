@@ -243,6 +243,7 @@ class EXIFWindow(w.QMainWindow):
         event.accept()
 
 class LocationWindow(w.QMainWindow):
+    windowClosed = c.pyqtSignal()
     def __init__(self, URL):
         super(LocationWindow, self).__init__()
         self.browser = web.QWebEngineView()
