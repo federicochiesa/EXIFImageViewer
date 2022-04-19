@@ -1,7 +1,7 @@
 import PyQt5.QtWidgets as w
 import PyQt5.QtGui as g
 import PyQt5.QtCore as c
-import PyQt5.QtWebEngineWidgets as web
+#import PyQt5.QtWebEngineWidgets as web
 import exifread
 import sys
 
@@ -120,21 +120,20 @@ class ImageViewerWindow(w.QMainWindow):
     def rotateImage(self, clockwise):
         if clockwise:
             self.angle = (self.angle + 90) % 360
+            self.label.setPixmap(self.label.pixmap().transformed(g.QTransform().rotate(90), c.Qt.SmoothTransformation).scaledToWidth(int(self.label.pixmap().height())))
         else:
             self.angle = (self.angle - 90) % 360
-        if self.angle % 180 != 0:
-            self.imageWidth = g.QPixmap(self.loadedImagePaths[self.imageIndex]).rect().height()
-        else:
-            self.imageWidth = g.QPixmap(self.loadedImagePaths[self.imageIndex]).rect().width()
-        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation).scaledToWidth(int(self.imageWidth * self.scaleIndex)))
+            self.label.setPixmap(self.label.pixmap().transformed(g.QTransform().rotate(-90), c.Qt.SmoothTransformation).scaledToWidth(int(self.label.pixmap().height())))
         self.label.adjustSize()
     
     def scaleImage(self, zoomIn):
         if zoomIn: 
             self.scaleIndex *= 1.25
+            self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation).scaledToWidth(int(self.label.pixmap().width() * 1.25)))
         else:
             self.scaleIndex /= 1.25
-        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation).scaledToWidth(int(self.imageWidth * self.scaleIndex)))
+            self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation).scaledToWidth(int(self.label.pixmap().width() / 1.25)))
+        self.label.adjustSize()
 
     def showImageAtIndex(self, index, firstStart = False):
         image = g.QPixmap(self.loadedImagePaths[index])
@@ -143,7 +142,6 @@ class ImageViewerWindow(w.QMainWindow):
         self.imageIndex = index
         self.angle = 0
         self.scaleIndex = 1
-        self.label.adjustSize()
         self.resizeWindow(firstStart)
         self.imageWidth = image.rect().width()
         self.model = EXIFModel(self.loadedImagePaths[index])
