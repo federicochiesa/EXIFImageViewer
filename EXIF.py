@@ -97,7 +97,7 @@ class ImageViewerWindow(w.QMainWindow):
         topLeftPoint = w.QDesktopWidget().availableGeometry().topLeft()
         self.move(topLeftPoint)
 
-    def resizeWindow(self, firstTime):
+    def resizeWindow(self, firstTime): #resize to first image(if it fits on screen), then scale images to fit window
         imageSize = self.label.sizeHint()
         screenSize = w.QDesktopWidget().availableGeometry()
         resizeToThis = c.QSize(0,0)
@@ -109,9 +109,14 @@ class ImageViewerWindow(w.QMainWindow):
             if(imageSize.height() > screenSize.height()):
                 resizeToThis.setHeight(screenSize.height())
             else:
-                resizeToThis.setHeight(imageSize.height()+51)
+                resizeToThis.setHeight(imageSize.height() + 51)
             self.topLeft()
             self.resize(resizeToThis)
+        if imageSize.width() > self.width():
+            self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).scaledToWidth(self.width()))
+        if imageSize.height() > self.height():
+            self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).scaledToHeight(self.height() - 51))
+        self.label.adjustSize()
 
         
     def rotateImage(self, clockwise):
