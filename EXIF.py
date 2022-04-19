@@ -86,50 +86,62 @@ class ImageViewerWindow(w.QMainWindow):
             element.addAction(self.nextAction)
             element.addAction(self.EXIFAction)
             element.addAction(self.locationAction)
-    
+
     def changeImage(self, next):
         if next:
             self.showImageAtIndex((self.imageIndex + 1) % len(self.loadedImagePaths))
         else:
             self.showImageAtIndex((self.imageIndex - 1) % len(self.loadedImagePaths))
 
-    def resizeWindow(self):
+    def topLeft(self):
+        topLeftPoint = w.QDesktopWidget().availableGeometry().topLeft()
+        self.move(topLeftPoint)
+
+    def resizeWindow(self, firstTime):
         imageSize = self.label.sizeHint()
         screenSize = w.QDesktopWidget().availableGeometry()
         resizeToThis = c.QSize(0,0)
-        if(imageSize.width() > screenSize.width()):
-            resizeToThis.setWidth(screenSize.width())
-        else:
-            resizeToThis.setWidth(imageSize.width())
-        if(imageSize.height() > screenSize.height()):
-            resizeToThis.setHeight(screenSize.height())
-        else:
-            resizeToThis.setHeight(imageSize.height())
-        self.resize(resizeToThis)
+        if firstTime:
+            if(imageSize.width() > screenSize.width()):
+                resizeToThis.setWidth(screenSize.width())
+            else:
+                resizeToThis.setWidth(imageSize.width())
+            if(imageSize.height() > screenSize.height()):
+                resizeToThis.setHeight(screenSize.height())
+            else:
+                resizeToThis.setHeight(imageSize.height()+51)
+            self.topLeft()
+            self.resize(resizeToThis)
+
         
     def rotateImage(self, clockwise):
         if clockwise:
             self.angle = (self.angle + 90) % 360
         else:
             self.angle = (self.angle - 90) % 360
-        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation))
+        if self.angle % 180 != 0:
+            self.imageWidth = g.QPixmap(self.loadedImagePaths[self.imageIndex]).rect().height()
+        else:
+            self.imageWidth = g.QPixmap(self.loadedImagePaths[self.imageIndex]).rect().width()
+        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation).scaledToWidth(int(self.imageWidth * self.scaleIndex)))
         self.label.adjustSize()
     
     def scaleImage(self, zoomIn):
-        if zoomIn:
-            self.imageWidth *= 1.25
+        if zoomIn: 
+            self.scaleIndex *= 1.25
         else:
-            self.imageWidth /= 1.25
-        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).scaledToWidth(int(self.imageWidth)))
+            self.scaleIndex /= 1.25
+        self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation).scaledToWidth(int(self.imageWidth * self.scaleIndex)))
 
-    def showImageAtIndex(self, index):
+    def showImageAtIndex(self, index, firstStart = False):
         image = g.QPixmap(self.loadedImagePaths[index])
         self.label.setPixmap(image)
         self.scrollArea.setWidget(self.label)
         self.imageIndex = index
         self.angle = 0
+        self.scaleIndex = 1
         self.label.adjustSize()
-        self.resizeWindow()
+        self.resizeWindow(firstStart)
         self.imageWidth = image.rect().width()
         self.model = EXIFModel(self.loadedImagePaths[index])
         if self.model.getEXIFLocation() != (None, None):
@@ -149,7 +161,7 @@ class ImageViewerWindow(w.QMainWindow):
             if firstStart:
                 self.show()
             self.imageIndex = 0
-            self.showImageAtIndex(self.imageIndex)
+            self.showImageAtIndex(self.imageIndex, True)
         elif firstStart:
             sys.exit()
     
