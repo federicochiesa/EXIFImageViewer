@@ -112,10 +112,8 @@ class ImageViewerWindow(w.QMainWindow):
                 resizeToThis.setHeight(imageSize.height() + 51)
             self.topLeft()
             self.resize(resizeToThis)
-        if imageSize.width() > self.width():
-            self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).scaledToWidth(self.width()))
-        if imageSize.height() > self.height():
-            self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).scaledToHeight(self.height() - 51))
+        if imageSize.width() > self.width() or imageSize.height() > self.height():
+            self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).scaled(self.width(), self.height() - 51, aspectRatioMode=c.Qt.KeepAspectRatio))
         self.label.adjustSize()
 
         
