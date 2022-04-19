@@ -1,7 +1,7 @@
 import PyQt5.QtWidgets as w
 import PyQt5.QtGui as g
 import PyQt5.QtCore as c
-#import PyQt5.QtWebEngineWidgets as web
+import PyQt5.QtWebEngineWidgets as web
 import exifread
 import sys
 
@@ -113,8 +113,7 @@ class ImageViewerWindow(w.QMainWindow):
             self.topLeft()
             self.resize(resizeToThis)
         if imageSize.width() > self.width() or imageSize.height() > self.height():
-            self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).scaled(self.width(), self.height() - 51, aspectRatioMode=c.Qt.KeepAspectRatio))
-        self.label.adjustSize()
+            self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).scaled(self.width(), self.height() - 79, aspectRatioMode=c.Qt.KeepAspectRatio))
 
         
     def rotateImage(self, clockwise):
@@ -128,10 +127,8 @@ class ImageViewerWindow(w.QMainWindow):
     
     def scaleImage(self, zoomIn):
         if zoomIn: 
-            self.scaleIndex *= 1.25
             self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation).scaledToWidth(int(self.label.pixmap().width() * 1.25)))
         else:
-            self.scaleIndex /= 1.25
             self.label.setPixmap(g.QPixmap(self.loadedImagePaths[self.imageIndex]).transformed(g.QTransform().rotate(self.angle), c.Qt.SmoothTransformation).scaledToWidth(int(self.label.pixmap().width() / 1.25)))
         self.label.adjustSize()
 
@@ -141,7 +138,6 @@ class ImageViewerWindow(w.QMainWindow):
         self.scrollArea.setWidget(self.label)
         self.imageIndex = index
         self.angle = 0
-        self.scaleIndex = 1
         self.resizeWindow(firstStart)
         self.imageWidth = image.rect().width()
         self.model = EXIFModel(self.loadedImagePaths[index])
