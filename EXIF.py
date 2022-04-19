@@ -1,7 +1,7 @@
 import PyQt5.QtWidgets as w
 import PyQt5.QtGui as g
 import PyQt5.QtCore as c
-#import PyQt5.QtWebEngineWidgets as web
+import PyQt5.QtWebEngineWidgets as web
 import exifread
 import sys
 
