@@ -1,7 +1,7 @@
 import PyQt5.QtWidgets as w
 import PyQt5.QtGui as g
 import PyQt5.QtCore as c
-import PyQt5.QtWebEngineWidgets as web
+#import PyQt5.QtWebEngineWidgets as web
 import exifread
 import sys
 
@@ -58,7 +58,7 @@ class ImageViewerWindow(w.QMainWindow):
         self.zoomOutAction.triggered.connect(lambda: self.scaleImage(zoomIn = False))
 
         self.locationAction = w.QAction("Show Image Location", self)
-        self.locationAction.setStatusTip("Show the image location on Google Maps. (opens in a browser window)")
+        self.locationAction.setStatusTip("Show the image location in OpenStreetMap. (opens in a browser window)")
         self.locationAction.setShortcut(g.QKeySequence(c.Qt.CTRL + c.Qt.Key_L))
         self.locationAction.triggered.connect(self.showLocation)
 
@@ -92,6 +92,20 @@ class ImageViewerWindow(w.QMainWindow):
             self.showImageAtIndex((self.imageIndex + 1) % len(self.loadedImagePaths))
         else:
             self.showImageAtIndex((self.imageIndex - 1) % len(self.loadedImagePaths))
+
+    def resizeWindow(self):
+        imageSize = self.label.sizeHint()
+        screenSize = w.QDesktopWidget().availableGeometry()
+        resizeToThis = c.QSize(0,0)
+        if(imageSize.width() > screenSize.width()):
+            resizeToThis.setWidth(screenSize.width())
+        else:
+            resizeToThis.setWidth(imageSize.width())
+        if(imageSize.height() > screenSize.height()):
+            resizeToThis.setHeight(screenSize.height())
+        else:
+            resizeToThis.setHeight(imageSize.height())
+        self.resize(resizeToThis)
         
     def rotateImage(self, clockwise):
         if clockwise:
@@ -115,7 +129,7 @@ class ImageViewerWindow(w.QMainWindow):
         self.imageIndex = index
         self.angle = 0
         self.label.adjustSize()
-        self.resize(self.label.sizeHint()) # TODO: resize window correctly on image open
+        self.resizeWindow()
         self.imageWidth = image.rect().width()
         self.model = EXIFModel(self.loadedImagePaths[index])
         if self.model.getEXIFLocation() != (None, None):
